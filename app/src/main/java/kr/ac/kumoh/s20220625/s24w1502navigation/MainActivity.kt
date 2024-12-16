@@ -8,16 +8,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.internal.composableLambda
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import kr.ac.kumoh.s20220625.s24w1502navigation.ui.theme.S24W1502NavigationTheme
 
 class MainActivity : ComponentActivity() {
@@ -36,20 +44,66 @@ class MainActivity : ComponentActivity() {
 fun MainScreen() {
     val navController = rememberNavController()
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = "screen1", //시작 화면 의미
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable("screen1") {
-                FirstScreen(navController)
-            }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
 
-            composable("screen2") {
-                SecondScreen(navController)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            DrawerSheet(drawerState) {
+                navController.navigate(it) {
+                    launchSingleTop = true
+                    popUpTo(it) { inclusive = true }
+                }
+            }
+        },
+        gesturesEnabled = true,
+    ) {
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = "screen1", //시작 화면 의미
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable("screen1") {
+                    FirstScreen(navController)
+                }
+
+                composable("screen2") {
+                    SecondScreen(navController)
+                }
             }
         }
+    }
+}
+
+@Composable
+fun DrawerSheet(
+    drawerState: DrawerState,
+    onNavigate: (String) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+
+    ModalDrawerSheet {
+        NavigationDrawerItem(
+            label = { Text("화면 1") },
+            selected = false,
+            onClick = {
+                onNavigate("screen1")
+                scope.launch {
+                    drawerState.close()
+                }
+            }
+        )
+        NavigationDrawerItem(
+            label = { Text("화면 2") },
+            selected = false,
+            onClick = {
+                onNavigate("screen2")
+                scope.launch {
+                    drawerState.close()
+                }
+            }
+        )
     }
 }
 
